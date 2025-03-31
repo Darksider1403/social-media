@@ -87,15 +87,29 @@ const CreatePostModal = ({ handleClose, open }) => {
     onSubmit: (values) => {
       console.log("formik values", values);
       dispatch(createPostAction(values));
+
+      // Reset the form and selected media
+      formik.resetForm();
+      setSelectedImage(null);
+      setSelectedVideo(null);
+
       handleClose(); // Close modal after submission
     },
   });
+
+  const handleModalClose = () => {
+    // Reset form and selected media when modal is closed
+    formik.resetForm();
+    setSelectedImage(null);
+    setSelectedVideo(null);
+    handleClose();
+  };
 
   return (
     <div>
       <Modal
         open={open}
-        onClose={handleClose}
+        onClose={handleModalClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
