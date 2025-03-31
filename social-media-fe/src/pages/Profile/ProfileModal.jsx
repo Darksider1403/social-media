@@ -1,12 +1,14 @@
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Modal from "@mui/material/Modal";
 import { Avatar, IconButton, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { useFormik } from "formik";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfileAction } from "../../redux/Auth/auth.action";
-import React from "react";
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
 const style = {
   position: "absolute",
@@ -25,12 +27,33 @@ const style = {
 export default function ProfileModal({ open, handleClose }) {
   const dispatch = useDispatch();
   const { auth } = useSelector((state) => state);
+  const [isLoading, setIsLoading] = useState(false);
+  const [avatar, setAvatar] = useState(auth.user?.avatar || null);
+
+  const handleAvatarChange = async (event) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+
+    try {
+      setIsLoading(true);
+      const file = event.target.files[0];
+      const avatarUrl = await uploadToCloudinary(file, "image");
+      setAvatar(avatarUrl);
+
+      // Update the form value
+      formik.setFieldValue("avatar", avatarUrl);
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formik = useFormik({
-    enableReinitialize: true, // Important for updating initial values
+    enableReinitialize: true,
     initialValues: {
       firstName: auth.user?.firstName || "",
       lastName: auth.user?.lastName || "",
+      avatar: auth.user?.avatar || "",
       // Add other fields you want to update
     },
     onSubmit: (values) => {
@@ -38,6 +61,7 @@ export default function ProfileModal({ open, handleClose }) {
       handleClose();
     },
   });
+
   return (
     <div>
       <Modal
@@ -55,7 +79,9 @@ export default function ProfileModal({ open, handleClose }) {
                 </IconButton>
                 <p>Edit Profile</p>
               </div>
-              <Button type="submit">Save</Button>
+              <Button type="submit" disabled={isLoading}>
+                Save
+              </Button>
             </div>
             <div>
               <div className="h-[15rem]">
@@ -68,15 +94,33 @@ export default function ProfileModal({ open, handleClose }) {
                   alt="Cover"
                 />
               </div>
-              <div className="pl-5">
+              <div className="pl-5 relative">
                 <Avatar
                   className="transform -translate-y-24"
                   sx={{ width: "10rem", height: "10rem" }}
-                  src={
-                    auth.user?.image ||
-                    "https://res.cloudinary.com/ddkso1wxi/image/upload/v1675919455/Logo/Copy_of_Zosh_Academy_nblljp.png"
-                  }
+                  src={avatar || auth.user?.avatar || ""}
                 />
+
+                {/* Avatar upload button */}
+                <input
+                  type="file"
+                  id="avatar-upload"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  style={{ display: "none" }}
+                />
+                <label htmlFor="avatar-upload">
+                  <IconButton
+                    component="span"
+                    className="absolute transform -translate-y-32 translate-x-16"
+                    sx={{
+                      bgcolor: "white",
+                      "&:hover": { bgcolor: "whitesmoke" },
+                    }}
+                  >
+                    <PhotoCameraIcon />
+                  </IconButton>
+                </label>
               </div>
             </div>
             <div className="space-y-3">

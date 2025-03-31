@@ -16,6 +16,9 @@ import {
   UPDATE_PROFILE_FAILURE,
   UPDATE_PROFILE_REQUEST,
   UPDATE_PROFILE_SUCCESS,
+  GET_PROFILE_BY_USERNAME_REQUEST,
+  GET_PROFILE_BY_USERNAME_SUCCESS,
+  GET_PROFILE_BY_USERNAME_FAILURE,
 } from "./auth.actiontype";
 
 export const loginUserAction = (loginData) => async (dispatch) => {
@@ -81,18 +84,28 @@ export const getProfileAction = (token) => async (dispatch) => {
   }
 };
 
-export const updateProfileAction = (reqData) => async (dispatch) => {
-  dispatch({ type: UPDATE_PROFILE_REQUEST });
+export const updateProfileAction = (updatedData) => async (dispatch) => {
   try {
-    const { data } = await api.put(`${API_BASE_URL}/api/users`, reqData);
+    dispatch({ type: UPDATE_PROFILE_REQUEST });
 
-    dispatch({ type: UPDATE_PROFILE_SUCCESS, payload: data });
+    const { data } = await api.put("/api/users", updatedData);
 
-    // After successful update, fetch the updated profile
-    dispatch(getProfileAction(localStorage.getItem("jwt")));
+    dispatch({
+      type: UPDATE_PROFILE_SUCCESS,
+      payload: data,
+    });
+
+    // Optionally refresh the profile after update
+    dispatch(getProfileAction());
+
+    return data;
   } catch (error) {
-    console.error("Update profile error:", error);
-    dispatch({ type: UPDATE_PROFILE_FAILURE, payload: error.message });
+    console.error("Error updating profile:", error);
+    dispatch({
+      type: UPDATE_PROFILE_FAILURE,
+      payload: error.message,
+    });
+    throw error;
   }
 };
 
@@ -106,5 +119,32 @@ export const searchUser = (query) => async (dispatch) => {
   } catch (error) {
     dispatch({ type: SEARCH_USER_FAILURE });
     console.error("Search user action error:", error);
+  }
+};
+
+export const getProfileByUsernameAction = (username) => async (dispatch) => {
+  try {
+    dispatch({ type: GET_PROFILE_BY_USERNAME_REQUEST });
+
+    // Format username to remove @ if it exists
+    const formattedUsername = username.startsWith("@")
+      ? username.substring(1)
+      : username;
+
+    const { data } = await api.get(`/api/users/username/${formattedUsername}`);
+
+    dispatch({
+      type: GET_PROFILE_BY_USERNAME_SUCCESS,
+      payload: data,
+    });
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching profile by username:", error);
+    dispatch({
+      type: GET_PROFILE_BY_USERNAME_FAILURE,
+      payload: error.message,
+    });
+    throw error;
   }
 };

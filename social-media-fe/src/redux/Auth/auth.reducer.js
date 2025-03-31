@@ -9,6 +9,9 @@ import {
   GET_PROFILE_REQUEST,
   UPDATE_PROFILE_SUCCESS,
   SEARCH_USER_SUCCESS,
+  GET_PROFILE_BY_USERNAME_REQUEST,
+  GET_PROFILE_BY_USERNAME_SUCCESS,
+  GET_PROFILE_BY_USERNAME_FAILURE,
 } from "./auth.actiontype";
 
 const initialState = {
@@ -67,6 +70,28 @@ export const authReducer = (state = initialState, action) => {
         searchUser: action.payload,
         error: null,
         loading: false,
+      };
+    case GET_PROFILE_BY_USERNAME_REQUEST:
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+
+    case GET_PROFILE_BY_USERNAME_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        error: null,
+        user: action.payload,
+        profileUser: action.payload,
+      };
+
+    case GET_PROFILE_BY_USERNAME_FAILURE:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
       };
     default:
       return state;

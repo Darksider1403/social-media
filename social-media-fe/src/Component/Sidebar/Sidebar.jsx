@@ -38,7 +38,14 @@ const Sidebar = () => {
 
   const handleNavigation = (item) => {
     if (item.title === "Profile") {
-      navigate(`/profile/${auth.user?.id}`);
+      // Use the username or construct one from first and last name
+      const username =
+        user.username ||
+        (userFirstName && userLastName
+          ? `${userFirstName.toLowerCase()}_${userLastName.toLowerCase()}`
+          : `user_${auth.user?.id}`);
+
+      navigate(`/profile/@${username}`);
     } else {
       navigate(item.path);
     }
@@ -56,7 +63,14 @@ const Sidebar = () => {
   };
 
   const handleProfileClick = () => {
-    navigate(`/profile/${auth.user?.id}`);
+    // Use the username or construct one from first and last name
+    const username =
+      user.username ||
+      (userFirstName && userLastName
+        ? `${userFirstName.toLowerCase()}_${userLastName.toLowerCase()}`
+        : `user_${auth.user?.id}`);
+
+    navigate(`/profile/@${username}`);
     handleClose();
   };
 
