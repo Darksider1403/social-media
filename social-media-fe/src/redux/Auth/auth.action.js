@@ -19,6 +19,7 @@ import {
   GET_PROFILE_BY_USERNAME_REQUEST,
   GET_PROFILE_BY_USERNAME_SUCCESS,
   GET_PROFILE_BY_USERNAME_FAILURE,
+  LOGOUT,
 } from "./auth.actiontype";
 
 export const loginUserAction = (loginData) => async (dispatch) => {
@@ -147,4 +148,11 @@ export const getProfileByUsernameAction = (username) => async (dispatch) => {
     });
     throw error;
   }
+};
+
+export const logoutAction = () => (dispatch) => {
+  localStorage.removeItem("jwt");
+  localStorage.removeItem("user");
+
+  dispatch({ type: LOGOUT });
 };

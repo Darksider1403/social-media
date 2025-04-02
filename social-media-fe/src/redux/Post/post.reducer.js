@@ -9,8 +9,9 @@ import {
   LIKE_POSTS_REQUEST,
   LIKE_POSTS_SUCCESS,
   CREATE_COMMENT_SUCCESS,
-  CREATE_COMMENT_REQUEST,
-  CREATE_COMMENT_FAILURE,
+  GET_USERS_POSTS_REQUEST,
+  GET_USERS_POSTS_SUCCESS,
+  GET_USERS_POSTS_FAILURE,
 } from "./post.action.Type";
 
 const initialState = {
@@ -92,6 +93,27 @@ export const postReducer = (state = initialState, action) => {
         loading: false,
       };
 
+    case GET_USERS_POSTS_REQUEST:
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+
+    case GET_USERS_POSTS_SUCCESS:
+      return {
+        ...state,
+        userPosts: action.payload,
+        loading: false,
+        error: null,
+      };
+
+    case GET_USERS_POSTS_FAILURE:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+      };
     default:
       return state;
   }

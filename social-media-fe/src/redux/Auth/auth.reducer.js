@@ -12,6 +12,7 @@ import {
   GET_PROFILE_BY_USERNAME_REQUEST,
   GET_PROFILE_BY_USERNAME_SUCCESS,
   GET_PROFILE_BY_USERNAME_FAILURE,
+  LOGOUT,
 } from "./auth.actiontype";
 
 const initialState = {
@@ -92,6 +93,16 @@ export const authReducer = (state = initialState, action) => {
         ...state,
         loading: false,
         error: action.payload,
+      };
+
+    case LOGOUT:
+      return {
+        ...state,
+        user: null,
+        token: null,
+        loading: false,
+        error: null,
+        searchUser: [],
       };
     default:
       return state;

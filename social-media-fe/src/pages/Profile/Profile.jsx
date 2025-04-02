@@ -20,6 +20,10 @@ const Profile = () => {
   const { post } = useSelector((state) => state);
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("post");
+  const profileUser = auth.profileUser || auth.user || {};
+
+  console.log("Current profile user:", profileUser);
+  console.log("Posts in Redux:", post);
 
   const tabs = [
     { value: "post", name: "Post" },
@@ -33,19 +37,25 @@ const Profile = () => {
     ? username.substring(1)
     : username;
 
+  const profilePosts = post.userPosts || [];
+
   // Fetch user profile data
   React.useEffect(() => {
-    if (formattedUsername) {
+    if (username) {
+      const formattedUsername = username.startsWith("@")
+        ? username.substring(1)
+        : username;
       dispatch(getProfileByUsernameAction(formattedUsername));
     }
-  }, [formattedUsername, dispatch]);
+  }, [username, dispatch]);
 
-  // Fetch user posts
+  // Fetch user po  sts
   React.useEffect(() => {
-    if (auth.user?.id) {
-      dispatch(getUsersPostAction(auth.user.id));
+    if (profileUser?.id) {
+      console.log("Fetching posts for user ID:", profileUser.id);
+      dispatch(getUsersPostAction(profileUser.id));
     }
-  }, [auth.user?.id, dispatch]);
+  }, [profileUser?.id, dispatch]);
 
   // Get the user's posts, saved posts, and reels
   const userPosts = post.posts || [];
@@ -66,8 +76,6 @@ const Profile = () => {
     (formattedUsername === auth.user.username ||
       formattedUsername ===
         `${auth.user.firstName?.toLowerCase()}_${auth.user.lastName?.toLowerCase()}`);
-
-  const profileUser = auth.profileUser || auth.user || {};
 
   return (
     <Box display="flex" flexDirection="row" width="100%">
@@ -178,8 +186,8 @@ const Profile = () => {
               <div className="flex flex-col items-center w-full">
                 {value === "post" && (
                   <div className="space-y-5 w-[70%] my-10">
-                    {userPosts.length > 0 ? (
-                      userPosts.map((post) => (
+                    {profilePosts.length > 0 ? (
+                      profilePosts.map((post) => (
                         <div
                           key={post.id}
                           className="border border-slate-100 rounded-md"

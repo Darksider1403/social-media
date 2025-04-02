@@ -6,10 +6,12 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutAction } from "../../redux/Auth/auth.action";
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { auth } = useSelector((state) => state);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
@@ -53,8 +55,7 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     try {
-      localStorage.removeItem("jwt");
-      localStorage.removeItem("user");
+      dispatch(logoutAction());
     } catch (e) {
       console.error("Error during logout:", e);
     }

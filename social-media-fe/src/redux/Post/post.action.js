@@ -49,7 +49,7 @@ export const getUsersPostAction = (userId) => async (dispatch) => {
     console.log("Get user Post Action: ", data);
   } catch (error) {
     dispatch({ type: GET_USERS_POSTS_FAILURE, payload: error });
-    console.log("Get user Action Error: ", error);
+    console.log("Get user Posts Action Error: ", error);
   }
 };
 
