@@ -36,7 +36,13 @@ export const authReducer = (state = initialState, action) => {
       return { ...state, loading: true, error: null };
 
     case GET_PROFILE_SUCCESS:
-      return { ...state, user: action.payload, error: null, loading: false };
+      return {
+        ...state,
+        user: action.payload,
+        token: localStorage.getItem("jwt"), // Also set token from localStorage
+        error: null,
+        loading: false,
+      };
 
     case LOGIN_SUCCESS:
       return {

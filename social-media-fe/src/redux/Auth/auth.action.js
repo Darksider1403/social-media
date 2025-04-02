@@ -69,17 +69,33 @@ export const registerUserAction = (loginData) => async (dispatch) => {
 };
 
 export const getProfileAction = (token) => async (dispatch) => {
-  if (!token) return;
+  if (!token) {
+    console.log("No token provided to getProfileAction");
+    return;
+  }
 
   try {
+    console.log("Fetching user profile with stored token");
+    dispatch({ type: GET_PROFILE_REQUEST });
+
     const { data } = await axios.get(`${API_BASE_URL}/api/users/profile`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    dispatch({ type: GET_PROFILE_SUCCESS, payload: data });
+    console.log(
+      "Profile fetch successful:",
+      data ? "Data received" : "No data"
+    );
+
+    // Important: Also update token in auth state
+    dispatch({
+      type: GET_PROFILE_SUCCESS,
+      payload: data,
+    });
   } catch (error) {
+    console.error("Error fetching profile:", error.message);
     localStorage.removeItem("jwt");
     dispatch({ type: GET_PROFILE_FAILURE });
   }

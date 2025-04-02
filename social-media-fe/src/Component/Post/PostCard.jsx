@@ -58,6 +58,7 @@ const PostCard = ({ item }) => {
   };
 
   const handleLikePost = () => {
+    if (!auth.user) return; // Exit if user is not defined
     dispatch(likePostAction(item.id));
   };
 
@@ -146,7 +147,7 @@ const PostCard = ({ item }) => {
       <CardActions className="flex justify-between" disableSpacing>
         <div>
           <IconButton onClick={handleLikePost}>
-            {isLikedByReqUser(auth.user.id, item) ? (
+            {auth.user && isLikedByReqUser(auth.user.id, item) ? (
               <FavoriteIcon />
             ) : (
               <FavoriteBorderIcon />
