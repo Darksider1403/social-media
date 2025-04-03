@@ -38,8 +38,8 @@ public class UserController {
     }
 
     @PutMapping("/api/users")
-    public User updateUser(@RequestHeader("Authorization") String jwt,
-                           @RequestBody User user) throws UserException {
+    public User updateUser(@RequestHeader("Authorization") String jwt, @RequestBody User user)
+            throws UserException {
         User requestedUser = userService.findUserByJwt(jwt);
         User updatedUser = userService.updateUser(user, requestedUser.getId());
 
@@ -48,8 +48,7 @@ public class UserController {
 
     @PutMapping("/api/users/follow/{followerId}")
     public User followUserHandler(@RequestHeader("Authorization") String jwt,
-                                  @PathVariable("followerId") Integer followerId)
-            throws UserException {
+            @PathVariable("followerId") Integer followerId) throws UserException {
         User requestedUser = userService.findUserByJwt(jwt);
         User user = userService.followUser(requestedUser.getId(), followerId);
 
@@ -73,7 +72,7 @@ public class UserController {
 
     @PutMapping("/api/users/avatar")
     public User updateAvatar(@RequestHeader("Authorization") String jwt,
-                             @RequestBody Map<String, String> request) throws UserException {
+            @RequestBody Map<String, String> request) throws UserException {
         User requestedUser = userService.findUserByJwt(jwt);
         String avatarUrl = request.get("avatarUrl");
 
@@ -82,5 +81,14 @@ public class UserController {
         }
 
         return userService.updateAvatar(requestedUser.getId(), avatarUrl);
+    }
+
+    @GetMapping("/api/users/username/{username}")
+    public User getUserByUsername(@PathVariable("username") String username) throws Exception {
+        // Remove the @ symbol if it exists
+        if (username.startsWith("@")) {
+            username = username.substring(1);
+        }
+        return userService.findUserByUsername(username);
     }
 }

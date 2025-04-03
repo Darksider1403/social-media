@@ -34,6 +34,9 @@ public class User {
     // Added avatar field to store user profile image URL
     private String avatar;
 
+    // Added background image URL field
+    private String backgroundImage;
+
     @ElementCollection
     private List<Integer> followers = new ArrayList<>();
 

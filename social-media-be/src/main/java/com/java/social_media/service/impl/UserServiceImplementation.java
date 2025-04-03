@@ -82,7 +82,7 @@ public class UserServiceImplementation implements UserService {
             existingUser.setEmail(newUserDetails.getEmail());
         }
 
-        if(newUserDetails.getGender() != null) {
+        if (newUserDetails.getGender() != null) {
             existingUser.setGender(newUserDetails.getGender());
         }
 
@@ -121,4 +121,16 @@ public class UserServiceImplementation implements UserService {
         return userRepository.save(existingUser);
     }
 
+    @Override
+    public User findUserByUsername(String username) throws Exception {
+        // Create a username from firstName_lastName if there's no dedicated username field
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            String userUsername = (user.getFirstName() + "_" + user.getLastName()).toLowerCase();
+            if (userUsername.equals(username.toLowerCase())) {
+                return user;
+            }
+        }
+        throw new Exception("User not found with username: " + username);
+    }
 }

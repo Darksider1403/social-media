@@ -23,4 +23,6 @@ public interface UserService {
     User findUserByUuid(String uuid) throws Exception;
 
     User updateAvatar(Integer userId, String avatarUrl) throws UserException;
+
+    User findUserByUsername(String username) throws Exception;
 }
