@@ -66,6 +66,14 @@ const Profile = () => {
   const handleOpenProfileModal = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
+
+    // Force refresh profile data
+    if (username) {
+      const formattedUsername = username.startsWith("@")
+        ? username.substring(1)
+        : username;
+      dispatch(getProfileByUsernameAction(formattedUsername));
+    }
   };
 
   const handleChange = (event, newValue) => setValue(newValue);

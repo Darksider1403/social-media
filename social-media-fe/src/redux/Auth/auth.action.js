@@ -112,8 +112,11 @@ export const updateProfileAction = (updatedData) => async (dispatch) => {
       payload: data,
     });
 
-    // Optionally refresh the profile after update
-    dispatch(getProfileAction());
+    // Get a fresh copy of the profile
+    const token = localStorage.getItem("jwt");
+    if (token) {
+      dispatch(getProfileAction(token));
+    }
 
     return data;
   } catch (error) {

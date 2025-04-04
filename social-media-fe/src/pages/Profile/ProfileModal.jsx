@@ -1,13 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Modal from "@mui/material/Modal";
 import { Avatar, IconButton, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { useFormik } from "formik";
 import { useDispatch, useSelector } from "react-redux";
-import { updateProfileAction } from "../../redux/Auth/auth.action";
+import {
+  updateProfileAction,
+  getProfileByUsernameAction,
+} from "../../redux/Auth/auth.action";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
 const style = {
@@ -29,6 +33,17 @@ export default function ProfileModal({ open, handleClose }) {
   const { auth } = useSelector((state) => state);
   const [isLoading, setIsLoading] = useState(false);
   const [avatar, setAvatar] = useState(auth.user?.avatar || null);
+  const [backgroundImage, setBackgroundImage] = useState(
+    auth.user?.backgroundImage || null
+  );
+
+  useEffect(() => {
+    // When modal opens, set local state from Redux
+    if (open) {
+      setAvatar(auth.user?.avatar || null);
+      setBackgroundImage(auth.user?.backgroundImage || null);
+    }
+  }, [open, auth.user]);
 
   const handleAvatarChange = async (event) => {
     if (!event.target.files || event.target.files.length === 0) return;
@@ -48,17 +63,46 @@ export default function ProfileModal({ open, handleClose }) {
     }
   };
 
+  const handleBackgroundChange = async (event) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+
+    try {
+      setIsLoading(true);
+      const file = event.target.files[0];
+      const backgroundUrl = await uploadToCloudinary(file, "image");
+      setBackgroundImage(backgroundUrl);
+
+      // Update the form value
+      formik.setFieldValue("backgroundImage", backgroundUrl);
+    } catch (error) {
+      console.error("Error uploading background image:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
       firstName: auth.user?.firstName || "",
       lastName: auth.user?.lastName || "",
       avatar: auth.user?.avatar || "",
-      // Add other fields you want to update
+      backgroundImage: auth.user?.backgroundImage || "",
     },
-    onSubmit: (values) => {
-      dispatch(updateProfileAction(values));
-      handleClose();
+    onSubmit: async (values) => {
+      try {
+        await dispatch(updateProfileAction(values));
+
+        // Force refresh the profile data
+        const username =
+          auth.user?.username ||
+          `${auth.user?.firstName?.toLowerCase()}_${auth.user?.lastName?.toLowerCase()}`;
+        dispatch(getProfileByUsernameAction(username));
+
+        handleClose();
+      } catch (error) {
+        console.error("Error updating profile:", error);
+      }
     },
   });
 
@@ -84,15 +128,37 @@ export default function ProfileModal({ open, handleClose }) {
               </Button>
             </div>
             <div>
-              <div className="h-[15rem]">
+              <div className="h-[15rem] relative">
                 <img
                   className="w-full h-full rounded-t-md object-cover"
                   src={
+                    backgroundImage ||
                     auth.user?.backgroundImage ||
                     "https://cdn.pixabay.com/photo/2014/01/13/20/01/pebbles-243910_640.jpg"
                   }
                   alt="Cover"
                 />
+
+                {/* Background image upload button */}
+                <input
+                  type="file"
+                  id="background-upload"
+                  accept="image/*"
+                  onChange={handleBackgroundChange}
+                  style={{ display: "none" }}
+                />
+                <label htmlFor="background-upload">
+                  <IconButton
+                    component="span"
+                    className="absolute bottom-4 right-4"
+                    sx={{
+                      bgcolor: "white",
+                      "&:hover": { bgcolor: "whitesmoke" },
+                    }}
+                  >
+                    <CameraAltIcon />
+                  </IconButton>
+                </label>
               </div>
               <div className="pl-5 relative">
                 <Avatar

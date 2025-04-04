@@ -16,7 +16,8 @@ import {
 } from "./auth.actiontype";
 
 const initialState = {
-  user: null,
+  user: null, // Current logged-in user
+  profileUser: null, // User whose profile is being viewed
   token: null,
   loading: false,
   error: null,
@@ -64,13 +65,20 @@ export const authReducer = (state = initialState, action) => {
       };
     case REGISTER_FAILURE:
       return { ...state, loading: false, error: action.payload };
+
     case UPDATE_PROFILE_SUCCESS:
       return {
         ...state,
         loading: false,
         user: action.payload,
+        // If the profile being viewed is the user's own profile, update it too
+        profileUser:
+          state.profileUser?.id === action.payload.id
+            ? action.payload
+            : state.profileUser,
         error: null,
       };
+
     case SEARCH_USER_SUCCESS:
       return {
         ...state,
@@ -78,6 +86,7 @@ export const authReducer = (state = initialState, action) => {
         error: null,
         loading: false,
       };
+
     case GET_PROFILE_BY_USERNAME_REQUEST:
       return {
         ...state,
@@ -90,7 +99,7 @@ export const authReducer = (state = initialState, action) => {
         ...state,
         loading: false,
         error: null,
-        user: action.payload,
+        // Store the viewed profile separately, don't overwrite the user
         profileUser: action.payload,
       };
 
@@ -105,6 +114,7 @@ export const authReducer = (state = initialState, action) => {
       return {
         ...state,
         user: null,
+        profileUser: null,
         token: null,
         loading: false,
         error: null,
