@@ -19,13 +19,14 @@ public class UserServiceImplementation implements UserService {
     @Override
     public User registerUser(User user) {
         User newUser = new User();
-        newUser.setId(user.getId());
+        // Remove this line: newUser.setId(user.getId());
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
         newUser.setEmail(user.getEmail());
         newUser.setPassword(user.getPassword());
         newUser.setGender(user.getGender());
         newUser.setAvatar(user.getAvatar());
+        newUser.setBackgroundImage(user.getBackgroundImage()); // Add this for the new field
 
         return userRepository.save(newUser);
     }
@@ -81,13 +82,15 @@ public class UserServiceImplementation implements UserService {
         if (newUserDetails.getEmail() != null) {
             existingUser.setEmail(newUserDetails.getEmail());
         }
-
         if (newUserDetails.getGender() != null) {
             existingUser.setGender(newUserDetails.getGender());
         }
-
         if (newUserDetails.getAvatar() != null) {
             existingUser.setAvatar(newUserDetails.getAvatar());
+        }
+        // Add this for background image
+        if (newUserDetails.getBackgroundImage() != null) {
+            existingUser.setBackgroundImage(newUserDetails.getBackgroundImage());
         }
 
         return userRepository.save(existingUser);
