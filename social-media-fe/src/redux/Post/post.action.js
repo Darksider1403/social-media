@@ -15,6 +15,10 @@ import {
   LIKE_POSTS_FAILURE,
   LIKE_POSTS_REQUEST,
   LIKE_POSTS_SUCCESS,
+  SAVE_POST_FAILURE,
+  SAVE_POST_REQUEST,
+  SAVE_POST_SUCCESS,
+  FETCH_SAVED_POSTS_SUCCESS,
 } from "./post.action.Type";
 
 export const createPostAction = (postData) => async (dispatch) => {
@@ -86,5 +90,58 @@ export const createCommentAction = (reqData) => async (dispatch) => {
     });
   } catch (error) {
     dispatch({ type: CREATE_COMMENT_FAILURE, payload: error });
+  }
+};
+
+export const savePostAction = (postId) => async (dispatch) => {
+  dispatch({ type: SAVE_POST_REQUEST });
+  try {
+    const { data } = await api.put(`/api/posts/save/${postId}`);
+    console.log("Save post response:", data);
+
+    // Get updated profile with savedPostIds
+    const { data: userData } = await api.get("/api/users/profile");
+    console.log("User data after save:", userData);
+
+    dispatch({
+      type: SAVE_POST_SUCCESS,
+      payload: {
+        post: data,
+        userData: userData,
+      },
+    });
+  } catch (error) {
+    console.error("Save post error:", error);
+    dispatch({ type: SAVE_POST_FAILURE, payload: error });
+  }
+};
+
+export const fetchSavedPosts = () => async (dispatch) => {
+  try {
+    // Get user profile with savedPostIds
+    const { data: userData } = await api.get("/api/users/profile");
+    const savedPostIds = userData.savedPostIds || [];
+
+    // If there are saved posts, fetch their full data
+    if (savedPostIds.length > 0) {
+      // Either fetch each post individually
+      const savedPosts = await Promise.all(
+        savedPostIds.map((id) =>
+          api.get(`/api/posts/${id}`).then((res) => res.data)
+        )
+      );
+
+      dispatch({
+        type: FETCH_SAVED_POSTS_SUCCESS,
+        payload: savedPosts,
+      });
+    } else {
+      dispatch({
+        type: FETCH_SAVED_POSTS_SUCCESS,
+        payload: [],
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching saved posts:", error);
   }
 };

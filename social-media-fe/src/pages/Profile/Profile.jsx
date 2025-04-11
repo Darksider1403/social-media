@@ -11,7 +11,11 @@ import Sidebar from "../../Component/Sidebar/Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import ProfileModal from "./ProfileModal";
 import { getProfileByUsernameAction } from "../../redux/Auth/auth.action";
-import { getUsersPostAction } from "../../redux/Post/post.action";
+import {
+  fetchSavedPosts,
+  getUsersPostAction,
+} from "../../redux/Post/post.action";
+import { useEffect } from "react";
 
 const Profile = () => {
   const { username } = useParams();
@@ -60,7 +64,7 @@ const Profile = () => {
   // Get the user's posts, saved posts, and reels
   const userPosts = post.posts || [];
   // Saved posts should be fetched from the user's saved posts field if available
-  const savedPosts = auth.user?.savedPosts || [];
+  const savedPosts = useSelector((state) => state.post.savedPosts || []);
   // Reels would need to be fetched from a dedicated endpoint if you have one
 
   const handleOpenProfileModal = () => setOpen(true);
@@ -75,6 +79,12 @@ const Profile = () => {
       dispatch(getProfileByUsernameAction(formattedUsername));
     }
   };
+
+  useEffect(() => {
+    if (value === "saved" && auth.user?.id) {
+      dispatch(fetchSavedPosts());
+    }
+  }, [value, auth.user?.id, dispatch]);
 
   const handleChange = (event, newValue) => setValue(newValue);
 

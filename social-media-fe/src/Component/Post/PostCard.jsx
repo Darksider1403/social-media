@@ -1,5 +1,5 @@
-import * as React from "react";
-import { Card, CardHeader, Avatar, Divider } from "@mui/material";
+import React, { useEffect } from "react";
+import { Card, CardHeader, Avatar, Divider, Button } from "@mui/material";
 import CardMedia from "@mui/material/CardMedia";
 import IconButton from "@mui/material/IconButton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   createCommentAction,
   likePostAction,
+  savePostAction,
 } from "../../redux/Post/post.action";
 import { isLikedByReqUser } from "../../utils/isLikedByReqUser";
 
@@ -24,7 +25,30 @@ const PostCard = ({ item }) => {
   const [showComments, setShowComments] = React.useState(false);
   const [commentInput, setCommentInput] = React.useState("");
   const { post, auth } = useSelector((store) => store);
+  const [isLocalSaved, setIsLocalSaved] = React.useState(false);
   const dispatch = useDispatch();
+
+  // Check if this post is saved by the user
+  const isSaved = React.useMemo(() => {
+    if (!auth.user || !auth.user.savedPostIds) return false;
+    return auth.user.savedPostIds.includes(item.id);
+  }, [auth.user, item.id]);
+
+  useEffect(() => {
+    console.log("Auth user:", auth.user);
+    console.log("Is this post saved:", isSaved);
+    console.log("Item ID:", item.id);
+    if (auth.user?.savedPostIds) {
+      console.log("Saved post IDs:", auth.user.savedPostIds);
+    }
+  }, [auth.user, isSaved, item.id]);
+
+  useEffect(() => {
+    // Initialize from Redux state
+    if (auth.user?.savedPostIds) {
+      setIsLocalSaved(auth.user.savedPostIds.includes(item.id));
+    }
+  }, [auth.user?.savedPostIds, item.id]);
 
   // Safety check for the item
   if (!item || !item.user) {
@@ -40,7 +64,7 @@ const PostCard = ({ item }) => {
   };
 
   const handleCreateComment = (content) => {
-    if (!content.trim()) return;
+    if (!content.trim() || !auth.user) return;
 
     const reqData = {
       postId: item.id,
@@ -52,14 +76,20 @@ const PostCard = ({ item }) => {
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      handleCreateComment(e.target.value);
-      e.target.value = "";
+      handleCreateComment(commentInput);
     }
   };
 
   const handleLikePost = () => {
     if (!auth.user) return; // Exit if user is not defined
     dispatch(likePostAction(item.id));
+  };
+
+  const handleSavePost = () => {
+    if (!auth.user) return;
+    // Toggle local state immediately for responsive UI
+    setIsLocalSaved(!isLocalSaved);
+    dispatch(savePostAction(item.id));
   };
 
   // Extracted video rendering to make it more focused and debuggable
@@ -148,7 +178,7 @@ const PostCard = ({ item }) => {
         <div>
           <IconButton onClick={handleLikePost}>
             {auth.user && isLikedByReqUser(auth.user.id, item) ? (
-              <FavoriteIcon />
+              <FavoriteIcon color="error" />
             ) : (
               <FavoriteBorderIcon />
             )}
@@ -164,8 +194,12 @@ const PostCard = ({ item }) => {
         </div>
 
         <div>
-          <IconButton>
-            {item.saved ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+          <IconButton onClick={handleSavePost}>
+            {isLocalSaved ? (
+              <BookmarkIcon style={{ color: "#FFD700" }} />
+            ) : (
+              <BookmarkBorderIcon />
+            )}
           </IconButton>
         </div>
       </CardActions>
@@ -191,6 +225,14 @@ const PostCard = ({ item }) => {
               type="text"
               placeholder="Write your comment..."
             />
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleCreateComment(commentInput)}
+              disabled={!commentInput.trim()}
+            >
+              Post
+            </Button>
           </div>
           <Divider />
 
@@ -200,7 +242,7 @@ const PostCard = ({ item }) => {
               item.comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="flex justify-between items-center"
+                  className="flex justify-between items-center mb-3"
                 >
                   <div className="flex items-center space-x-5">
                     <Avatar

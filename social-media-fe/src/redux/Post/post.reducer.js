@@ -12,6 +12,10 @@ import {
   GET_USERS_POSTS_REQUEST,
   GET_USERS_POSTS_SUCCESS,
   GET_USERS_POSTS_FAILURE,
+  SAVE_POST_REQUEST,
+  SAVE_POST_SUCCESS,
+  SAVE_POST_FAILURE,
+  FETCH_SAVED_POSTS_SUCCESS,
 } from "./post.action.Type";
 
 const initialState = {
@@ -113,6 +117,38 @@ export const postReducer = (state = initialState, action) => {
         ...state,
         loading: false,
         error: action.payload,
+      };
+
+    case SAVE_POST_REQUEST:
+      return {
+        ...state,
+        loading: true,
+        error: null,
+      };
+
+    case SAVE_POST_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        // Update auth.user with the latest user data including savedPostIds
+        auth: {
+          ...state.auth,
+          user: action.payload.userData,
+        },
+        error: null,
+      };
+
+    case SAVE_POST_FAILURE:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+      };
+
+    case FETCH_SAVED_POSTS_SUCCESS:
+      return {
+        ...state,
+        savedPosts: action.payload,
       };
     default:
       return state;
