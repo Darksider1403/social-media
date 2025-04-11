@@ -16,6 +16,7 @@ import {
   getUsersPostAction,
 } from "../../redux/Post/post.action";
 import { useEffect } from "react";
+import { normalizeUsername } from "../../utils/stringUtils";
 
 const Profile = () => {
   const { username } = useParams();
@@ -46,9 +47,11 @@ const Profile = () => {
   // Fetch user profile data
   React.useEffect(() => {
     if (username) {
+      // Remove @ if present
       const formattedUsername = username.startsWith("@")
         ? username.substring(1)
         : username;
+
       dispatch(getProfileByUsernameAction(formattedUsername));
     }
   }, [username, dispatch]);
@@ -157,17 +160,15 @@ const Profile = () => {
 
             <div className="p-5">
               <div>
-                <h1 className="py-1 font-bold text-xl">
-                  {profileUser.firstName && profileUser.lastName
-                    ? `${profileUser.firstName} ${profileUser.lastName}`
-                    : "User"}
+                <h1>
+                  {profileUser.firstName} {profileUser.lastName}
                 </h1>
                 <p>
                   @
-                  {profileUser.username ||
-                    (profileUser.firstName && profileUser.lastName
-                      ? `${profileUser.firstName.toLowerCase()}_${profileUser.lastName.toLowerCase()}`
-                      : "username")}
+                  {normalizeUsername(
+                    profileUser.firstName,
+                    profileUser.lastName
+                  )}
                 </p>
               </div>
 

@@ -8,6 +8,7 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAction } from "../../redux/Auth/auth.action";
+import { normalizeUsername, getProfileUrl } from "../../utils/stringUtils";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -24,11 +25,11 @@ const Sidebar = () => {
   const userInitial = userFirstName
     ? userFirstName.charAt(0).toUpperCase()
     : "U";
+
   const userHandle =
     user.username ||
-    (userFirstName && userLastName
-      ? `${userFirstName.toLowerCase()}_${userLastName.toLowerCase()}`
-      : "username");
+    normalizeUsername(userFirstName, userLastName) ||
+    "username";
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -64,14 +65,8 @@ const Sidebar = () => {
   };
 
   const handleProfileClick = () => {
-    // Use the username or construct one from first and last name
-    const username =
-      user.username ||
-      (userFirstName && userLastName
-        ? `${userFirstName.toLowerCase()}_${userLastName.toLowerCase()}`
-        : `user_${auth.user?.id}`);
-
-    navigate(`/profile/@${username}`);
+    const normalizedUsername = normalizeUsername(user.firstName, user.lastName);
+    navigate(`/profile/@${normalizedUsername}`);
     handleClose();
   };
 

@@ -20,6 +20,7 @@ import {
   savePostAction,
 } from "../../redux/Post/post.action";
 import { isLikedByReqUser } from "../../utils/isLikedByReqUser";
+import { normalizeUsername, getProfileUrl } from "../../utils/stringUtils";
 
 const PostCard = ({ item }) => {
   const [showComments, setShowComments] = React.useState(false);
@@ -33,6 +34,29 @@ const PostCard = ({ item }) => {
     if (!auth.user || !auth.user.savedPostIds) return false;
     return auth.user.savedPostIds.includes(item.id);
   }, [auth.user, item.id]);
+
+  const normalizeUsername = (firstName, lastName) => {
+    // Function to remove diacritics (accents)
+    const removeDiacritics = (str) => {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    };
+
+    // Get normalized first and last names
+    const normalizedFirstName = firstName
+      ? removeDiacritics(firstName.toLowerCase())
+      : "";
+    const normalizedLastName = lastName
+      ? removeDiacritics(lastName.toLowerCase())
+      : "";
+
+    // Create username
+    let username = normalizedFirstName;
+    if (normalizedLastName) {
+      username += "_" + normalizedLastName;
+    }
+
+    return username;
+  };
 
   useEffect(() => {
     console.log("Auth user:", auth.user);
@@ -148,10 +172,7 @@ const PostCard = ({ item }) => {
         }
         title={`${item.user.firstName || ""} ${item.user.lastName || ""}`}
         subheader={
-          "@" +
-          (item.user.firstName?.toLowerCase() || "") +
-          "_" +
-          (item.user.lastName?.toLowerCase() || "")
+          "@" + normalizeUsername(item.user.firstName, item.user.lastName)
         }
       />
 
@@ -237,14 +258,14 @@ const PostCard = ({ item }) => {
           <Divider />
 
           {/* Comments section */}
-          <div className="mx-3 space-y-2 my-5 text-xs">
+          <div className="mx-3 space-y-2 my-5">
             {item.comments && item.comments.length > 0 ? (
               item.comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="flex justify-between items-center mb-3"
+                  className="flex justify-between items-start mb-3"
                 >
-                  <div className="flex items-center space-x-5">
+                  <div className="flex items-start space-x-3 w-full">
                     <Avatar
                       src={comment.user?.avatar}
                       sx={{
@@ -258,11 +279,17 @@ const PostCard = ({ item }) => {
                     >
                       {comment.user?.firstName?.[0] || "U"}
                     </Avatar>
-                    <div>
-                      <p className="font-semibold">
-                        {comment.user?.firstName || "User"}
+                    <div className="w-full overflow-hidden">
+                      <p className="font-semibold text-sm whitespace-normal break-words">
+                        {comment.user?.firstName} {comment.user?.lastName}
                       </p>
-                      <p>{comment.content}</p>
+                      <p className="text-sm text-gray-500">
+                        @
+                        {normalizeUsername(
+                          comment.user?.firstName,
+                          comment.user?.lastName
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
