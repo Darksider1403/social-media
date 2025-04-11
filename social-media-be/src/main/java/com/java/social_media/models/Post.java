@@ -1,5 +1,6 @@
 package com.java.social_media.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.java.social_media.utils.IdGenerator;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,6 +32,10 @@ public class Post {
 
     @ManyToMany
     private List<User> liked = new ArrayList<>();
+
+    @JsonIgnore
+    @ManyToMany(mappedBy = "savedPosts")
+    private List<User> savedBy = new ArrayList<>();
 
     @OneToMany
     private List<Comment> comments = new ArrayList<>();

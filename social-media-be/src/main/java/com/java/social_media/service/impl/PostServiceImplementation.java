@@ -6,6 +6,7 @@ import com.java.social_media.repository.PostRepository;
 import com.java.social_media.repository.UserRepository;
 import com.java.social_media.service.PostService;
 import com.java.social_media.service.UserService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -70,18 +71,23 @@ public class PostServiceImplementation implements PostService {
     }
 
     @Override
+    @Transactional
     public Post savedPost(Integer postId, Integer userId) throws Exception {
         Post post = findPostById(postId);
         User user = userService.findUserById(userId);
 
-        if (user.getSavedPosts().contains(post)) {
-            user.removeSavedPost(post);
+        boolean isAlreadySaved = user.getSavedPosts().stream()
+                .anyMatch(savedPost -> savedPost.getId().equals(postId));
+
+        if (isAlreadySaved) {
+            // Remove the post from saved posts
+            user.getSavedPosts().removeIf(savedPost -> savedPost.getId().equals(postId));
         } else {
-            user.savePost(post);
+            // Add the post to saved posts
+            user.getSavedPosts().add(post);
         }
 
         userRepository.save(user);
-
         return post;
     }
 

@@ -1,6 +1,7 @@
 package com.java.social_media.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.java.social_media.utils.IdGenerator;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,6 +46,11 @@ public class User {
 
     @JsonIgnore
     @ManyToMany
+    @JoinTable(
+            name = "users_saved_posts",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "post_id")
+    )
     private List<Post> savedPosts = new ArrayList<>();
 
     @Column(name = "created_at")
@@ -59,6 +65,17 @@ public class User {
 
     public void removeSavedPost(Post post) {
         savedPosts.remove(post);
+    }
+
+    @JsonProperty("savedPostIds")
+    public List<Integer> getSavedPostIds() {
+        List<Integer> savedPostIds = new ArrayList<>();
+        if (savedPosts != null) {
+            for (Post post : savedPosts) {
+                savedPostIds.add(post.getId());
+            }
+        }
+        return savedPostIds;
     }
 
     @PrePersist
