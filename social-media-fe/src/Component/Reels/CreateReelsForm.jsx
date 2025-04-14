@@ -1,11 +1,34 @@
 import React, { useState, useRef } from "react";
-import { Button, TextField, Card } from "@mui/material";
+import {
+  Button,
+  TextField,
+  Card,
+  CircularProgress,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import { useDispatch, useSelector } from "react-redux";
+import { createReelAction } from "../../redux/Reels/reels.action";
+import { useNavigate } from "react-router-dom";
 
 const CreateReelsForm = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const fileInputRef = useRef(null);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Get state from Redux
+  const { createLoading, createError } = useSelector((state) => state.reels);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -15,9 +38,55 @@ const CreateReelsForm = () => {
     }
   };
 
-  const handleUpload = () => {
-    // Implement your upload logic here
-    console.log("Uploading file:", selectedFile);
+  const handleUpload = async () => {
+    if (!selectedFile || !title.trim()) {
+      setNotification({
+        open: true,
+        message: "Please provide both a title and a video file",
+        severity: "error",
+      });
+      return;
+    }
+
+    try {
+      // Create reel data object with the actual file for Cloudinary upload
+      const reelData = {
+        title: title,
+        description: description,
+        video: selectedFile, // Send the actual file, not just the name
+      };
+
+      // Dispatch create reel action
+      await dispatch(createReelAction(reelData));
+
+      // Show success notification
+      setNotification({
+        open: true,
+        message: "Reel uploaded successfully!",
+        severity: "success",
+      });
+
+      // Reset form
+      setSelectedFile(null);
+      setPreview(null);
+      setTitle("");
+      setDescription("");
+
+      // Navigate back to reels page
+      setTimeout(() => {
+        navigate("/reels");
+      }, 2000);
+    } catch (error) {
+      setNotification({
+        open: true,
+        message: createError || "Failed to upload reel. Please try again.",
+        severity: "error",
+      });
+    }
+  };
+
+  const handleCloseNotification = () => {
+    setNotification({ ...notification, open: false });
   };
 
   return (
@@ -62,6 +131,9 @@ const CreateReelsForm = () => {
             label="Reel Title"
             variant="outlined"
             placeholder="Enter a title for your reel"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
           />
 
           {/* Description Input */}
@@ -72,6 +144,8 @@ const CreateReelsForm = () => {
             multiline
             rows={4}
             placeholder="Add a description to your reel"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
 
           {/* Upload Button */}
@@ -81,12 +155,32 @@ const CreateReelsForm = () => {
             fullWidth
             size="large"
             onClick={handleUpload}
-            disabled={!selectedFile}
+            disabled={!selectedFile || createLoading}
+            startIcon={
+              createLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : null
+            }
           >
-            Upload Reel
+            {createLoading ? "Uploading..." : "Upload Reel"}
           </Button>
         </div>
       </Card>
+
+      {/* Notification */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

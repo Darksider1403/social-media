@@ -1,7 +1,11 @@
 import React, { useRef, useState } from "react";
-import videoFile from "../../assets/发现更多精彩视频 - 抖音搜索_3.mp4";
 
-const UserReelsCard = ({ views = 0, title = "", isPinned = false }) => {
+const UserReelsCard = ({
+  views = 0,
+  title = "",
+  isPinned = false,
+  videoUrl,
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef(null);
 
@@ -36,20 +40,26 @@ const UserReelsCard = ({ views = 0, title = "", isPinned = false }) => {
       onDragStart={preventDrag}
       onDrop={preventDrag}
     >
-      <video
-        ref={videoRef}
-        className="w-full h-full object-cover"
-        onClick={togglePlay}
-        onContextMenu={preventRightClick}
-        controlsList="nodownload noplaybackrate noremoteplayback"
-        disablePictureInPicture
-        playsInline
-        controls={false}
-        draggable={false}
-        style={{ pointerEvents: "none" }}
-      >
-        <source src={videoFile} type="video/mp4" />
-      </video>
+      {videoUrl ? (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          onClick={togglePlay}
+          onContextMenu={preventRightClick}
+          controlsList="nodownload noplaybackrate noremoteplayback"
+          disablePictureInPicture
+          playsInline
+          controls={false}
+          draggable={false}
+          style={{ pointerEvents: "none" }}
+        >
+          <source src={videoUrl} type="video/mp4" />
+        </video>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-white">
+          Video not available
+        </div>
+      )}
 
       {/* Clickable overlay for play/pause */}
       <div
@@ -66,7 +76,7 @@ const UserReelsCard = ({ views = 0, title = "", isPinned = false }) => {
         )}
 
         {/* Play icon */}
-        {!isPlaying && (
+        {!isPlaying && videoUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="p-3 bg-black/50 rounded-full">
               <svg
