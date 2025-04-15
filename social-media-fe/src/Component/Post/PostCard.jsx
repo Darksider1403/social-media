@@ -68,13 +68,11 @@ const PostCard = ({ item }) => {
   }, [auth.user, isSaved, item.id]);
 
   useEffect(() => {
-    // Initialize from Redux state
     if (auth.user?.savedPostIds) {
       setIsLocalSaved(auth.user.savedPostIds.includes(item.id));
     }
   }, [auth.user?.savedPostIds, item.id]);
 
-  // Safety check for the item
   if (!item || !item.user) {
     return (
       <Card className="p-5">
@@ -105,18 +103,16 @@ const PostCard = ({ item }) => {
   };
 
   const handleLikePost = () => {
-    if (!auth.user) return; // Exit if user is not defined
+    if (!auth.user) return;
     dispatch(likePostAction(item.id));
   };
 
   const handleSavePost = () => {
     if (!auth.user) return;
-    // Toggle local state immediately for responsive UI
     setIsLocalSaved(!isLocalSaved);
     dispatch(savePostAction(item.id));
   };
 
-  // Extracted video rendering to make it more focused and debuggable
   const renderVideoContent = () => {
     if (!item.video) return null;
 
@@ -129,7 +125,7 @@ const PostCard = ({ item }) => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          aspectRatio: "16/9", // Maintain a 16:9 aspect ratio container
+          aspectRatio: "16/9",
           overflow: "hidden",
         }}
       >
@@ -139,7 +135,7 @@ const PostCard = ({ item }) => {
           style={{
             maxHeight: "100%",
             maxWidth: "100%",
-            objectFit: "contain", // This ensures the video maintains its aspect ratio
+            objectFit: "contain",
           }}
         >
           <source src={item.video} type="video/mp4" />
@@ -258,6 +254,7 @@ const PostCard = ({ item }) => {
           <Divider />
 
           {/* Comments section */}
+          {/* Comments section */}
           <div className="mx-3 space-y-2 my-5">
             {item.comments && item.comments.length > 0 ? (
               item.comments.map((comment) => (
@@ -283,12 +280,16 @@ const PostCard = ({ item }) => {
                       <p className="font-semibold text-sm whitespace-normal break-words">
                         {comment.user?.firstName} {comment.user?.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      {/* <p className="text-sm text-gray-500">
                         @
                         {normalizeUsername(
                           comment.user?.firstName,
                           comment.user?.lastName
                         )}
+                      </p> */}
+                      {/* Add this line to show the comment content */}
+                      <p className="text-sm mt-1 whitespace-normal break-words">
+                        {comment.content}
                       </p>
                     </div>
                   </div>

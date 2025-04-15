@@ -1,6 +1,7 @@
-import { Avatar, Button, CardHeader, IconButton } from "@mui/material";
+import { Avatar, Button, CardHeader } from "@mui/material";
 import { red } from "@mui/material/colors";
 import React from "react";
+import { normalizeUsername } from "../../utils/stringUtils"; // Import the normalizeUsername function
 
 const PopularUsersCard = ({ user }) => {
   // Check if user data exists
@@ -9,11 +10,10 @@ const PopularUsersCard = ({ user }) => {
   const firstName = user.firstName || "";
   const lastName = user.lastName || "";
   const fullName = `${firstName} ${lastName}`.trim();
+
+  // Use normalizeUsername to remove diacritics
   const username =
-    user.username ||
-    (firstName && lastName
-      ? `${firstName.toLowerCase()}_${lastName.toLowerCase()}`
-      : "user");
+    user.username || normalizeUsername(firstName, lastName) || "user";
 
   return (
     <div>

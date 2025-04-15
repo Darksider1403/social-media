@@ -14,6 +14,7 @@ import {
   createCommentAction,
   createPostAction,
 } from "../../redux/Post/post.action";
+import { normalizeUsername } from "../../utils/stringUtils";
 
 const style = {
   position: "absolute",
@@ -43,9 +44,7 @@ const CreatePostModal = ({ handleClose, open }) => {
   const userLastName = currentUser.lastName || "";
   const userAvatar = currentUser.avatar || "";
   const userHandle = currentUser.firstName
-    ? `@${currentUser.firstName.toLowerCase()}${
-        currentUser.lastName ? `_${currentUser.lastName.toLowerCase()}` : ""
-      }`
+    ? `@${normalizeUsername(currentUser.firstName, currentUser.lastName)}`
     : "@user";
 
   const handleSelectImage = async (event) => {
