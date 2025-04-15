@@ -171,7 +171,11 @@ const PostCard = ({ item }) => {
           "@" + normalizeUsername(item.user.firstName, item.user.lastName)
         }
       />
-
+      <CardContent>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          {item.caption || "No caption"}
+        </Typography>
+      </CardContent>
       {/* Display image if present and no video */}
       {item.image && !item.video && (
         <CardMedia
@@ -185,11 +189,11 @@ const PostCard = ({ item }) => {
       {/* Display video if present using the specialized function */}
       {item.video && renderVideoContent()}
 
-      <CardContent>
+      {/* <CardContent>
         <Typography variant="body2" sx={{ color: "text.secondary" }}>
           {item.caption || "No caption"}
         </Typography>
-      </CardContent>
+      </CardContent> */}
 
       <CardActions className="flex justify-between" disableSpacing>
         <div>
@@ -254,7 +258,6 @@ const PostCard = ({ item }) => {
           <Divider />
 
           {/* Comments section */}
-          {/* Comments section */}
           <div className="mx-3 space-y-2 my-5">
             {item.comments && item.comments.length > 0 ? (
               item.comments.map((comment) => (
@@ -280,14 +283,6 @@ const PostCard = ({ item }) => {
                       <p className="font-semibold text-sm whitespace-normal break-words">
                         {comment.user?.firstName} {comment.user?.lastName}
                       </p>
-                      {/* <p className="text-sm text-gray-500">
-                        @
-                        {normalizeUsername(
-                          comment.user?.firstName,
-                          comment.user?.lastName
-                        )}
-                      </p> */}
-                      {/* Add this line to show the comment content */}
                       <p className="text-sm mt-1 whitespace-normal break-words">
                         {comment.content}
                       </p>
