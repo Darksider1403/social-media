@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from "react-redux";
 import React, { useEffect } from "react";
 import { getProfileAction } from "./redux/Auth/auth.action";
 import { connectWebSocket, disconnectWebSocket } from "./config/websocket";
+import Notification from "./pages/Notification/Notification";
 
 function App() {
   const { token, user } = useSelector((state) => state.auth);
@@ -81,6 +82,8 @@ function App() {
           path="/profile/:username"
           element={token ? <Profile /> : <Navigate to="/login" replace />}
         />
+
+        <Route path="/home/notifications" element={<Notification />} />
       </Routes>
     </div>
   );

@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAction } from "../../redux/Auth/auth.action";
 import { normalizeUsername, getProfileUrl } from "../../utils/stringUtils";
+import NotificationBell from "../Notification/NotificationBell";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -70,6 +71,34 @@ const Sidebar = () => {
     handleClose();
   };
 
+  const renderNavigationItem = (item) => {
+    // Special handling for Notifications
+    if (item.title === "Notifications") {
+      return (
+        <div
+          key={item.title}
+          className="cursor-pointer flex space-x-3 items-center hover:bg-gray-100 rounded-l-full p-3 mx-2"
+          onClick={() => navigate(item.path)}
+        >
+          <NotificationBell showDropdown={false} iconOnly={true} />
+          <p className="text-base">{item.title}</p>
+        </div>
+      );
+    }
+
+    // Regular navigation item
+    return (
+      <div
+        key={item.title}
+        className="cursor-pointer flex space-x-3 items-center hover:bg-gray-100 rounded-l-full p-3 mx-2"
+        onClick={() => handleNavigation(item)}
+      >
+        {item.icon}
+        <p className="text-base">{item.title}</p>
+      </div>
+    );
+  };
+
   return (
     <Card
       className="h-screen overflow-y-auto"
@@ -91,16 +120,7 @@ const Sidebar = () => {
         </div>
 
         <div className="space-y-1 mt-4">
-          {navigationMenu.map((item) => (
-            <div
-              key={item.title}
-              className="cursor-pointer flex space-x-3 items-center hover:bg-gray-100 rounded-l-full p-3 mx-2"
-              onClick={() => handleNavigation(item)}
-            >
-              {item.icon}
-              <p className="text-base">{item.title}</p>
-            </div>
-          ))}
+          {navigationMenu.map((item) => renderNavigationItem(item))}
         </div>
       </div>
 
