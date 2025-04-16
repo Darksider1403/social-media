@@ -40,7 +40,7 @@ export const authReducer = (state = initialState, action) => {
       return {
         ...state,
         user: action.payload,
-        token: localStorage.getItem("jwt"), // Also set token from localStorage
+        token: localStorage.getItem("jwt"),
         error: null,
         loading: false,
       };

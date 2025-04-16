@@ -104,6 +104,11 @@ const PostCard = ({ item }) => {
 
   const handleLikePost = () => {
     if (!auth.user) return;
+
+    console.log("Liking post:", item.id);
+    console.log("Current user:", auth.user);
+    console.log("JWT token available:", !!localStorage.getItem("jwt"));
+
     dispatch(likePostAction(item.id));
   };
 

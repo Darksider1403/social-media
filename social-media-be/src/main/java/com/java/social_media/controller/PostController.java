@@ -1,13 +1,16 @@
 package com.java.social_media.controller;
 
+import com.java.social_media.models.Notification;
 import com.java.social_media.models.Post;
 import com.java.social_media.models.User;
+import com.java.social_media.repository.NotificationRepository;
 import com.java.social_media.response.ApiResponse;
 import com.java.social_media.service.PostService;
 import com.java.social_media.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +20,8 @@ import java.util.List;
 public class PostController {
     private PostService postService;
     private UserService userService;
+    private NotificationRepository notificationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/api/posts")
     public ResponseEntity<Post> createPost(@RequestHeader("Authorization") String jwt,
@@ -71,8 +76,40 @@ public class PostController {
     public ResponseEntity<Post> likePostHandler(@PathVariable Integer postId,
                                                 @RequestHeader("Authorization") String jwt) throws Exception {
         User requestedUser = userService.findUserByJwt(jwt);
-        Post likedPost = postService.likePost(postId, requestedUser.getId());
+        Post post = postService.likePost(postId, requestedUser.getId());
 
-        return new ResponseEntity<>(likedPost, HttpStatus.ACCEPTED);
+        // Create notification if liking someone else's post
+        if (!post.getUser().getId().equals(requestedUser.getId())) {
+            try {
+                // Log notification creation attempt
+                System.out.println("Creating notification for user " + post.getUser().getId() +
+                        " about post " + post.getId() + " liked by user " + requestedUser.getId());
+
+                Notification notification = new Notification();
+                notification.setUser(post.getUser());
+                notification.setType("LIKE");
+                notification.setContent(requestedUser.getFirstName() + " " + requestedUser.getLastName() + " liked your post");
+                notification.setReferenceId(postId);
+                notification.setReferenceType("POST");
+                notification.setRead(false);
+
+                // Save to database
+                Notification savedNotification = notificationRepository.save(notification);
+                System.out.println("Notification saved: " + savedNotification.getId());
+
+                // Send via WebSocket
+                messagingTemplate.convertAndSendToUser(
+                        post.getUser().getId().toString(),
+                        "/queue/notifications",
+                        savedNotification
+                );
+                System.out.println("Notification sent via WebSocket");
+            } catch (Exception e) {
+                System.err.println("Error creating notification: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return new ResponseEntity<>(post, HttpStatus.ACCEPTED);
     }
 }

@@ -7,9 +7,10 @@ import Profile from "./pages/Profile/Profile";
 import { useSelector, useDispatch } from "react-redux";
 import React, { useEffect } from "react";
 import { getProfileAction } from "./redux/Auth/auth.action";
+import { connectWebSocket, disconnectWebSocket } from "./config/websocket";
 
 function App() {
-  const { token } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
   // Add this useEffect to check for token and restore auth state on app load
@@ -22,6 +23,27 @@ function App() {
       dispatch(getProfileAction(storedToken));
     }
   }, [dispatch]);
+
+  // Connect WebSocket when user is authenticated
+  useEffect(() => {
+    if (user && token) {
+      try {
+        console.log("Connecting WebSocket for user:", user.id);
+        connectWebSocket(user.id, token, dispatch);
+      } catch (error) {
+        console.error("Failed to connect WebSocket:", error);
+      }
+    }
+
+    // Cleanup WebSocket on unmount
+    return () => {
+      try {
+        disconnectWebSocket();
+      } catch (error) {
+        console.error("Error disconnecting WebSocket:", error);
+      }
+    };
+  }, [user, token, dispatch]);
 
   return (
     <div>

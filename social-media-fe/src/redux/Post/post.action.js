@@ -1,4 +1,5 @@
 import { api } from "../../config/api";
+import axios from "axios";
 import {
   CREATE_COMMENT_FAILURE,
   CREATE_COMMENT_REQUEST,
@@ -58,16 +59,19 @@ export const getUsersPostAction = (userId) => async (dispatch) => {
 };
 
 export const likePostAction = (postId) => async (dispatch) => {
-  dispatch({ type: LIKE_POSTS_REQUEST });
   try {
+    // Update the URL and method to match your backend
     const { data } = await api.put(`/api/posts/like/${postId}`);
 
-    console.log("Like post response:", data);
+    dispatch({
+      type: LIKE_POSTS_SUCCESS,
+      payload: data,
+    });
 
-    dispatch({ type: LIKE_POSTS_SUCCESS, payload: data });
+    return data;
   } catch (error) {
     console.error("Like post error:", error);
-    dispatch({ type: LIKE_POSTS_FAILURE, payload: error });
+    throw error;
   }
 };
 
