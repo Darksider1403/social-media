@@ -1,5 +1,6 @@
 package com.java.social_media.service.impl;
 
+import com.java.social_media.exceptions.UserException;
 import com.java.social_media.models.Story;
 import com.java.social_media.models.User;
 import com.java.social_media.repository.StoryRepository;
@@ -9,6 +10,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -33,5 +35,25 @@ public class StoryServiceImplementation implements StoryService {
         User user = userService.findUserById(userId);
 
         return storyRepository.findByUserId(user.getId());
+    }
+
+    @Override
+    public List<Story> findStoryFeed(Integer userId) throws UserException {
+        User user = userService.findUserById(userId);
+
+        List<Story> stories = new ArrayList<>();
+
+        // Add user's own stories
+        stories.addAll(storyRepository.findByUserId(userId));
+
+        // Add stories from users the current user follows
+        for (Integer followingId : user.getFollowings()) {
+            stories.addAll(storyRepository.findByUserId(followingId));
+        }
+
+        // Sort by timestamp, newest first
+        stories.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+
+        return stories;
     }
 }

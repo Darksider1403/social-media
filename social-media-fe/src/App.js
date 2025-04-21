@@ -9,6 +9,8 @@ import React, { useEffect } from "react";
 import { getProfileAction } from "./redux/Auth/auth.action";
 import { connectWebSocket, disconnectWebSocket } from "./config/websocket";
 import Notification from "./pages/Notification/Notification";
+import CreateStories from "./Component/Story/CrearteStories";
+import Stories from "./Component/Story/Stories";
 
 function App() {
   const { token, user } = useSelector((state) => state.auth);
@@ -84,6 +86,8 @@ function App() {
         />
 
         <Route path="/home/notifications" element={<Notification />} />
+        <Route path="/create-story" element={<CreateStories />} />
+        <Route path="/stories" element={<Stories />} />
       </Routes>
     </div>
   );

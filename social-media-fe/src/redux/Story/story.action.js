@@ -57,27 +57,41 @@ export const getUserStoriesAction = (userId) => async (dispatch) => {
   }
 };
 
-// Action to get all stories from followed users
 export const getAllStoriesAction = () => async (dispatch) => {
   try {
     dispatch({ type: GET_ALL_STORIES_REQUEST });
 
-    // Assuming you'll create an endpoint like "/api/stories/feed" to get stories from followed users
-    // If not available yet, you can implement it similar to a post feed
-    const { data } = await api.get("/api/story/feed");
-
-    dispatch({
-      type: GET_ALL_STORIES_SUCCESS,
-      payload: data,
-    });
-
-    return data;
+    // Try to fetch from feed endpoint
+    try {
+      const { data } = await api.get("/api/story/feed");
+      dispatch({
+        type: GET_ALL_STORIES_SUCCESS,
+        payload: data,
+      });
+      return data;
+    } catch (feedError) {
+      // Fallback: if feed endpoint fails, get stories from all users
+      // This is temporary until the feed endpoint is implemented
+      console.warn("Story feed endpoint not available, fetching all stories");
+      const { data } = await api.get("/api/story/all");
+      dispatch({
+        type: GET_ALL_STORIES_SUCCESS,
+        payload: data,
+      });
+      return data;
+    }
   } catch (error) {
     console.error("Get all stories error:", error);
     dispatch({
       type: GET_ALL_STORIES_FAILURE,
       payload: error.response?.data?.message || "Something went wrong",
     });
-    throw error;
+
+    // Return empty array instead of throwing to prevent app crashes
+    dispatch({
+      type: GET_ALL_STORIES_SUCCESS,
+      payload: [],
+    });
+    return [];
   }
 };
