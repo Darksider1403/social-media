@@ -10,15 +10,16 @@ import {
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CloseIcon from "@mui/icons-material/Close";
 import ImageIcon from "@mui/icons-material/Image";
-import VideocamIcon from "@mui/icons-material/Videocam";
 import { useDispatch, useSelector } from "react-redux";
 import { createStoryAction } from "../../redux/Story/story.action";
 import { useNavigate } from "react-router-dom";
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary"; // Import your uploadToCloudinary function
 
 const CreateStories = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [caption, setCaption] = useState("");
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -34,7 +35,6 @@ const CreateStories = () => {
       setSelectedFile(file);
       setPreview(URL.createObjectURL(file));
     } else {
-      // Based on your backend, it seems it only supports images for now
       alert("Please select an image file.");
     }
   };
@@ -43,26 +43,31 @@ const CreateStories = () => {
     if (!selectedFile) return;
 
     try {
-      // Convert the image to a base64 string for sending to the API
-      const reader = new FileReader();
-      reader.readAsDataURL(selectedFile);
-      reader.onloadend = async () => {
-        const base64String = reader.result;
+      setUploading(true);
 
-        // Create story object according to your backend model
-        const storyData = {
-          captions: caption,
-          image: base64String.split(",")[1], // Remove the data:image/jpeg;base64, part
-        };
+      // Upload to Cloudinary and get URL
+      const imageUrl = await uploadToCloudinary(selectedFile, "image");
 
-        // Dispatch action to create story
-        await dispatch(createStoryAction(storyData));
+      if (!imageUrl) {
+        throw new Error("Failed to upload image to Cloudinary");
+      }
 
-        // Redirect to stories page after successful upload
-        navigate("/stories");
+      // Create story object with Cloudinary URL
+      const storyData = {
+        captions: caption,
+        image: imageUrl, // Use the Cloudinary URL instead of base64
       };
+
+      // Dispatch action to create story
+      await dispatch(createStoryAction(storyData));
+
+      // Redirect to stories page after successful upload
+      navigate("/stories");
     } catch (error) {
       console.error("Error uploading story:", error);
+      alert("Failed to upload story. Please try again.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -75,6 +80,9 @@ const CreateStories = () => {
   const triggerImageUpload = () => {
     fileInputRef.current?.click();
   };
+
+  // Determine if the button should be disabled
+  const isButtonDisabled = !selectedFile || loading || uploading;
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
@@ -142,12 +150,16 @@ const CreateStories = () => {
             fullWidth
             size="large"
             onClick={handleUpload}
-            disabled={!selectedFile || loading}
+            disabled={isButtonDisabled}
             startIcon={
-              loading ? <CircularProgress size={24} /> : <CloudUploadIcon />
+              loading || uploading ? (
+                <CircularProgress size={24} />
+              ) : (
+                <CloudUploadIcon />
+              )
             }
           >
-            {loading ? "Uploading..." : "Post to Story"}
+            {loading || uploading ? "Uploading..." : "Post to Story"}
           </Button>
         </div>
       </Card>
