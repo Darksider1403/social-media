@@ -41,20 +41,25 @@ const Stories = () => {
       const storyGroups = {};
 
       stories.forEach((story) => {
+        if (!story.user) return; // Skip stories with no user data
+
         const userId = story.user.id;
         if (!storyGroups[userId]) {
           storyGroups[userId] = {
             userId,
-            username: story.user.firstName || "User",
-            profileImage: story.user.image || null,
+            username:
+              `${story.user.firstName || ""} ${
+                story.user.lastName || ""
+              }`.trim() || "User",
+            profileImage: story.user.avatar, // Use avatar instead of image
             stories: [],
           };
         }
 
         storyGroups[userId].stories.push({
           id: story.id,
-          type: "image", // Based on your backend, it seems all stories are images
-          url: story.image, // Assuming image is a URL or base64 string
+          type: "image",
+          url: story.image,
           caption: story.captions,
           timestamp: story.timestamp,
         });

@@ -61,25 +61,15 @@ export const getAllStoriesAction = () => async (dispatch) => {
   try {
     dispatch({ type: GET_ALL_STORIES_REQUEST });
 
-    // Try to fetch from feed endpoint
-    try {
-      const { data } = await api.get("/api/story/feed");
-      dispatch({
-        type: GET_ALL_STORIES_SUCCESS,
-        payload: data,
-      });
-      return data;
-    } catch (feedError) {
-      // Fallback: if feed endpoint fails, get stories from all users
-      // This is temporary until the feed endpoint is implemented
-      console.warn("Story feed endpoint not available, fetching all stories");
-      const { data } = await api.get("/api/story/all");
-      dispatch({
-        type: GET_ALL_STORIES_SUCCESS,
-        payload: data,
-      });
-      return data;
-    }
+    // Fetch from all stories endpoint
+    const { data } = await api.get("/api/story/all");
+
+    dispatch({
+      type: GET_ALL_STORIES_SUCCESS,
+      payload: data,
+    });
+
+    return data;
   } catch (error) {
     console.error("Get all stories error:", error);
     dispatch({
@@ -87,11 +77,7 @@ export const getAllStoriesAction = () => async (dispatch) => {
       payload: error.response?.data?.message || "Something went wrong",
     });
 
-    // Return empty array instead of throwing to prevent app crashes
-    dispatch({
-      type: GET_ALL_STORIES_SUCCESS,
-      payload: [],
-    });
+    // Return empty array to prevent crashes
     return [];
   }
 };

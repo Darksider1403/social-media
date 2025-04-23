@@ -39,4 +39,13 @@ public class StoryController {
         List<Story> stories = storyService.findStoryFeed(reqUser.getId());
         return stories;
     }
+
+    @GetMapping("/api/story/all")
+    public List<Story> getAllStory(@RequestHeader("Authorization") String token) throws UserException {
+        userService.findUserByJwt(token);
+
+        List<Story> stories = storyService.findAllStories();
+
+        return stories;
+    }
 }

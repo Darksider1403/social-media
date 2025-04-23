@@ -13,7 +13,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import { useDispatch, useSelector } from "react-redux";
 import { createStoryAction } from "../../redux/Story/story.action";
 import { useNavigate } from "react-router-dom";
-import { uploadToCloudinary } from "../../utils/uploadToCloudinary"; // Import your uploadToCloudinary function
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
 const CreateStories = () => {
   const [selectedFile, setSelectedFile] = useState(null);
