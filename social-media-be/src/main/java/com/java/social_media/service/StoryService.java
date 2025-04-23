@@ -12,4 +12,6 @@ public interface StoryService {
     List<Story> findStoryByUserId(Integer userId) throws Exception;
 
     List<Story> findStoryFeed(Integer userId) throws UserException;
+
+    List<Story> findAllStories();
 }

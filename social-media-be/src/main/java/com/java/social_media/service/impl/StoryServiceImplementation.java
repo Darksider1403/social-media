@@ -56,4 +56,16 @@ public class StoryServiceImplementation implements StoryService {
 
         return stories;
     }
+
+    @Override
+    public List<Story> findAllStories() {
+        LocalDateTime oneDayAgo = LocalDateTime.now().minusHours(24);
+
+        List<Story> recentStories = storyRepository.findByTimestampAfter(oneDayAgo);
+
+        recentStories.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+
+        return recentStories;
+    }
+
 }
