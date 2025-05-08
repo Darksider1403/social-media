@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @AllArgsConstructor
@@ -18,10 +19,19 @@ public class ChatController {
     private UserService userService;
 
     @PostMapping("/api/chats")
-    public Chat createChat(@RequestHeader("Authorization") String jwt,
-                           @RequestBody CreateChatRequest req) throws Exception {
+    public Chat createChat(@RequestBody Map<String, Integer> request,
+                           @RequestHeader("Authorization") String jwt) throws Exception {
+
+        // Extract userId from request
+        Integer userId = request.get("userId");
+
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is required");
+        }
+
         User reqUser = userService.findUserByJwt(jwt);
-        User targetUser = userService.findUserById(req.getTargetUserId());
+        User targetUser = userService.findUserById(userId);
+
         Chat chat = chatService.createChat(reqUser, targetUser);
 
         return chat;
@@ -40,7 +50,6 @@ public class ChatController {
     @GetMapping("/api/chats")
     public List<Chat> findUsersChat(@RequestHeader("Authorization") String jwt) {
         User user = userService.findUserByJwt(jwt);
-
         List<Chat> chats = chatService.findUsersChats(user.getId());
 
         return chats;
@@ -56,6 +65,16 @@ public class ChatController {
     @GetMapping("/api/v2/chats/{uuid}")
     public Chat findChatByUuid(@PathVariable("uuid") String uuid) throws Exception {
         return chatService.findChatByUuid(uuid);
+    }
+
+    @GetMapping("/api/chats/{chatId}")
+    public Chat findChatById(@PathVariable Integer chatId,
+                             @RequestHeader("Authorization") String jwt) throws Exception {
+
+        User user = userService.findUserByJwt(jwt);
+        Chat chat = chatService.findChatById(chatId);
+
+        return chat;
     }
 }
 
