@@ -6,6 +6,7 @@ import com.java.social_media.request.CreateChatRequest;
 import com.java.social_media.service.ChatService;
 import com.java.social_media.service.UserService;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -78,15 +79,7 @@ public class ChatController {
     }
 }
 
+@Data
 class CreateChatRequestV2 {
     private String targetUserUuid;
-
-    // Getters and setters
-    public String getTargetUserUuid() {
-        return targetUserUuid;
-    }
-
-    public void setTargetUserUuid(String targetUserUuid) {
-        this.targetUserUuid = targetUserUuid;
-    }
 }
