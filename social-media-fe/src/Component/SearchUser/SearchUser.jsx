@@ -1,120 +1,157 @@
-import { Avatar, Card, CardHeader } from "@mui/material";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { api } from "../../config/api";
+import { Avatar, Button, CircularProgress } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { searchUser } from "../../redux/Auth/auth.action";
 import { createChat } from "../../redux/Message/message.action";
+import { useNavigate } from "react-router-dom";
 
 const SearchUser = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showResults, setShowResults] = useState(false);
+  const [query, setQuery] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { auth } = useSelector((store) => store);
-  const searchRef = useRef(null);
-  const resultsRef = useRef(null);
 
-  // Debounce search to avoid too many API calls
+  // Debounce search to prevent too many API calls
   useEffect(() => {
+    if (!query.trim()) {
+      setUsers([]);
+      return;
+    }
+
     const timer = setTimeout(() => {
-      if (searchTerm.trim().length > 0) {
-        dispatch(searchUser(searchTerm));
-        setShowResults(true);
-      }
-    }, 300);
+      searchUsers();
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, dispatch]);
+  }, [query]);
 
-  // Close search results when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        resultsRef.current &&
-        !resultsRef.current.contains(event.target) &&
-        !searchRef.current.contains(event.target)
-      ) {
-        setShowResults(false);
+  const searchUsers = async () => {
+    if (!query.trim()) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data } = await api.get(`/api/users/search?query=${query}`);
+      console.log("Search results:", data);
+
+      // Filter out current user from search results
+      const filteredUsers = Array.isArray(data)
+        ? data.filter((user) => user.id !== auth.user?.id)
+        : [];
+
+      setUsers(filteredUsers);
+    } catch (error) {
+      console.error("Error searching users:", error);
+      setError("Failed to search users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateChat = async (user) => {
+    if (!user || !user.id) {
+      console.error("Invalid user", user);
+      setError("Invalid user selection");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Create the chat with the exact format your controller expects
+      const chatData = {
+        userId: user.id,
+      };
+
+      console.log("Creating chat with user:", user.id);
+
+      // Dispatch the create chat action
+      const result = await dispatch(createChat(chatData));
+      console.log("Chat created:", result);
+
+      if (result && result.id) {
+        setQuery(""); // Clear search
+        setUsers([]); // Clear results
+
+        // Navigate to the chat view or refresh chats
+        // Uncomment if you want to navigate to a specific chat
+        // navigate(`/messages/${result.id}`);
       }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleSearchUser = (e) => {
-    setSearchTerm(e.target.value);
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      setError("Failed to create chat. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const handleClick = (userId) => {
-    dispatch(createChat({ userId }));
-    setSearchTerm("");
-    setShowResults(false);
-  };
-
-  // Filter search results to match first name, last name, or username
-  const filteredResults = auth.searchUser?.filter((user) => {
-    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
-    const username = `${user.firstName.toLowerCase()}_${user.lastName.toLowerCase()}`;
-    const query = searchTerm.toLowerCase();
-
-    return (
-      fullName.includes(query) ||
-      username.includes(query) ||
-      (user.email && user.email.toLowerCase().includes(query))
-    );
-  });
 
   return (
     <div>
-      <div className="py-5 relative">
+      <div className="relative">
         <input
-          ref={searchRef}
-          className="bg-transparent border border-[#3b4054] outline-none w-full px-5 py-3 rounded-full"
-          placeholder="Search users by name, username, or email..."
           type="text"
-          value={searchTerm}
-          onChange={handleSearchUser}
-          onFocus={() => searchTerm.trim() && setShowResults(true)}
+          className="bg-transparent border border-[#3b4054] rounded-full w-full py-2 px-4"
+          placeholder="Search users..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
         />
 
-        {showResults && searchTerm.trim() && (
-          <div
-            ref={resultsRef}
-            className="absolute w-full z-10 top-[4.5rem] shadow-lg max-h-80 overflow-y-auto bg-white rounded-md"
-          >
-            {filteredResults?.length > 0 ? (
-              filteredResults.map((user) => (
-                <Card
-                  key={user.id}
-                  className="cursor-pointer hover:bg-gray-100 transition-colors border-b"
-                >
-                  <CardHeader
-                    onClick={() => handleClick(user.id)}
-                    avatar={
-                      <Avatar
-                        src={user.avatar}
-                        alt={`${user.firstName} ${user.lastName}`}
-                      >
-                        {!user.avatar &&
-                          `${user.firstName.charAt(0)}${user.lastName.charAt(
-                            0
-                          )}`}
-                      </Avatar>
-                    }
-                    title={`${user.firstName} ${user.lastName}`}
-                    subheader={`${user.firstName.toLowerCase()}_${user.lastName.toLowerCase()}`}
-                  />
-                </Card>
-              ))
-            ) : (
-              <Card className="p-4 text-center text-gray-500">
-                No users found matching "{searchTerm}"
-              </Card>
-            )}
+        {loading && (
+          <div className="absolute right-3 top-2">
+            <CircularProgress size={20} />
           </div>
         )}
       </div>
+
+      {error && <div className="text-red-500 text-sm mt-2 px-2">{error}</div>}
+
+      {users.length > 0 && (
+        <div className="mt-4 max-h-60 overflow-y-auto">
+          {users.map((user) => (
+            <div
+              key={user.id || Math.random()}
+              className="flex justify-between items-center p-2 border-b hover:bg-gray-100 rounded cursor-pointer"
+            >
+              <div className="flex items-center">
+                <Avatar
+                  src={user.avatar}
+                  alt={user.firstName}
+                  sx={{ width: 40, height: 40, marginRight: 2 }}
+                >
+                  {user.firstName
+                    ? user.firstName.charAt(0).toUpperCase()
+                    : "U"}
+                </Avatar>
+                <div>
+                  <p className="font-medium">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-sm text-gray-500">{user.email}</p>
+                </div>
+              </div>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => handleCreateChat(user)}
+                disabled={loading}
+                sx={{ minWidth: 0, px: 2 }}
+              >
+                Chat
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {query && users.length === 0 && !loading && !error && (
+        <div className="text-center p-4 text-gray-500">
+          No users found matching '{query}'
+        </div>
+      )}
     </div>
   );
 };

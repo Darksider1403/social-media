@@ -4,6 +4,8 @@ import {
   Box,
   CircularProgress,
   IconButton,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import WestIcon from "@mui/icons-material/West";
@@ -15,24 +17,29 @@ import "./Message.css";
 import UserChatCard from "./UserChatCard";
 import ChatMessage from "./ChatMessage";
 import { useDispatch, useSelector } from "react-redux";
-import { createMessage, getAllChats } from "../../redux/Message/message.action";
+import {
+  createMessage,
+  getAllChats,
+  getChatMessages,
+} from "../../redux/Message/message.action";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 import SendIcon from "@mui/icons-material/Send";
 import { useNavigate } from "react-router-dom";
+import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import Stomp from "stompjs";
 
 const Message = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { message, auth } = useSelector((store) => store);
-  const [currentChat, setCurrentChat] = useState();
+  const [currentChat, setCurrentChat] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [selectedImage, setSelectedImage] = useState();
+  const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [stompClient, setStompClient] = useState(null);
+  const [error, setError] = useState(null);
 
   const messagesContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -49,26 +56,163 @@ const Message = () => {
 
   // Load chats when component mounts
   useEffect(() => {
-    dispatch(getAllChats());
+    const loadChats = async () => {
+      try {
+        await dispatch(getAllChats());
+      } catch (err) {
+        console.error("Failed to load chats:", err);
+        setError("Failed to load chat list. Please try again.");
+      }
+    };
+
+    loadChats();
   }, [dispatch]);
+
+  // Connect to WebSocket
+  useEffect(() => {
+    if (!auth.user?.id || !auth.token) return;
+
+    console.log("Setting up WebSocket connection for chat...");
+
+    try {
+      const client = new Client({
+        webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+        connectHeaders: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+        debug: function (str) {
+          console.log("STOMP Chat: " + str);
+        },
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+
+        onConnect: function () {
+          console.log("Chat WebSocket connected successfully");
+
+          // Subscribe to message updates for this user
+          client.subscribe(
+            `/user/${auth.user.id}/queue/messages`,
+            function (message) {
+              try {
+                console.log("New chat message received:", message);
+                const receivedMessage = JSON.parse(message.body);
+
+                // Add the message to the current chat if we're viewing it
+                if (
+                  currentChat &&
+                  (receivedMessage.chat?.id === currentChat.id ||
+                    receivedMessage.chatId === currentChat.id)
+                ) {
+                  setMessages((prev) => {
+                    // Check if message already exists in the array
+                    if (!prev.some((msg) => msg.id === receivedMessage.id)) {
+                      return [...prev, receivedMessage];
+                    }
+                    return prev;
+                  });
+
+                  // Scroll to bottom when receiving new messages
+                  setTimeout(scrollToBottom, 100);
+                }
+              } catch (error) {
+                console.error("Error processing message:", error);
+              }
+            }
+          );
+        },
+
+        onStompError: function (frame) {
+          console.error("Broker reported error: " + frame.headers["message"]);
+          console.error("Additional details: " + frame.body);
+          setError("Connection error. Messages may not update in real-time.");
+        },
+      });
+
+      client.activate();
+      setStompClient(client);
+
+      // Cleanup function
+      return () => {
+        if (client && client.active) {
+          console.log("Disconnecting chat WebSocket");
+          client.deactivate();
+        }
+      };
+    } catch (err) {
+      console.error("WebSocket setup error:", err);
+    }
+  }, [auth.user?.id, auth.token, currentChat]);
+
+  // Fetch messages when a chat is selected
+  const fetchMessages = async (chatId) => {
+    if (!chatId) return;
+
+    setLoading(true);
+    try {
+      dispatch(getChatMessages(chatId));
+
+      // Get messages from the message store
+      const chatMessages = message.chatMessagesMap[chatId] || [];
+      console.log("Loaded messages for chat:", chatId, chatMessages);
+
+      // Ensure messages are sorted by timestamp
+      const sortedMessages = [...chatMessages].sort(
+        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+      );
+
+      setMessages(sortedMessages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setError("Failed to load messages. Please try again.");
+      setMessages([]);
+    } finally {
+      setLoading(false);
+      // Scroll to bottom after loading messages
+      setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  // Update local messages when Redux state changes
+  useEffect(() => {
+    if (
+      currentChat?.id &&
+      message.chatMessagesMap &&
+      message.chatMessagesMap[currentChat.id]
+    ) {
+      const chatMessages = message.chatMessagesMap[currentChat.id];
+      const sortedMessages = [...chatMessages].sort(
+        (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+      );
+      setMessages(sortedMessages);
+    }
+  }, [message.chatMessagesMap, currentChat]);
 
   // Handle new messages from Redux
   useEffect(() => {
-    if (message.message && message.message.id) {
-      // Only add the message if it's not already in the array
-      if (!messages.some((msg) => msg.id === message.message.id)) {
-        setMessages((prev) => [...prev.filter(Boolean), message.message]);
+    if (message.message && currentChat) {
+      const chatId = currentChat.id;
+      const messageChat = message.message.chat?.id || message.message.chatId;
+
+      if (chatId === messageChat) {
+        // Check if message already exists in our local state
+        setMessages((prev) => {
+          if (!prev.some((msg) => msg.id === message.message.id)) {
+            return [...prev, message.message];
+          }
+          return prev;
+        });
+
+        // Schedule scroll after state update
+        setTimeout(scrollToBottom, 100);
       }
-
-      // Schedule scroll after state update
-      setTimeout(scrollToBottom, 100);
     }
-  }, [message.message]);
+  }, [message.message, currentChat]);
 
-  // Scroll when messages change or a new chat is selected
+  // Scroll when messages change
   useEffect(() => {
     setTimeout(scrollToBottom, 100);
-  }, [currentChat]);
+  }, [messages]);
 
   const handleSelectImage = async (e) => {
     if (!e.target.files[0]) return;
@@ -79,43 +223,73 @@ const Message = () => {
       setSelectedImage(imgUrl);
     } catch (error) {
       console.error("Error uploading image:", error);
+      setError("Failed to upload image. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateMessage = () => {
+  const handleCreateMessage = async () => {
     if ((!messageText || messageText.trim() === "") && !selectedImage) {
       return; // Don't send empty messages
     }
 
+    if (!currentChat || !currentChat.id) {
+      setError("No chat selected");
+      return;
+    }
+
     const messageData = {
-      chatId: currentChat?.id,
+      chatId: currentChat.id,
       content: messageText.trim(),
       image: selectedImage || null,
     };
 
     console.log("Sending message:", messageData);
-    dispatch(createMessage(messageData));
 
-    // Optimistic update - add message to UI immediately
+    // Create optimistic message
     const optimisticMessage = {
-      id: Date.now(), // Temporary ID
+      id: `temp-${Date.now()}`, // Temporary ID
       content: messageText.trim(),
       image: selectedImage,
       user: auth.user,
       timestamp: new Date().toISOString(),
       chat: currentChat,
+      chatId: currentChat.id, // Add explicit chatId for safety
     };
 
-    setMessages((prev) => [...prev.filter(Boolean), optimisticMessage]);
+    // Add optimistic message to UI
+    setMessages((prev) => [...prev, optimisticMessage]);
 
-    // Clear input and selected image after sending
+    // Clear input and selected image before sending
+    const messageTextCopy = messageText.trim();
+    const selectedImageCopy = selectedImage;
     setSelectedImage(null);
     setMessageText("");
 
-    // Scroll to bottom after sending
-    setTimeout(scrollToBottom, 100);
+    // Scroll to bottom after clearing input
+    setTimeout(scrollToBottom, 50);
+
+    try {
+      // Dispatch the action to create the message
+      await dispatch(createMessage(messageData));
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      setError("Failed to send message. Please try again.");
+
+      // If the message fails to send, restore the input
+      if (messageTextCopy) {
+        setMessageText(messageTextCopy);
+      }
+      if (selectedImageCopy) {
+        setSelectedImage(selectedImageCopy);
+      }
+
+      // Remove the optimistic message
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== optimisticMessage.id)
+      );
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -126,26 +300,43 @@ const Message = () => {
   };
 
   const handleChatSelect = (chat) => {
-    setCurrentChat(chat);
-
-    // Filter out null/undefined messages and deduplicate by ID
-    const validMessages = (chat.messages || []).filter(Boolean);
-    const uniqueMessages = [];
-    const messageIds = new Set();
-
-    for (const msg of validMessages) {
-      if (msg && msg.id && !messageIds.has(msg.id)) {
-        messageIds.add(msg.id);
-        uniqueMessages.push(msg);
-      }
+    if (!chat || !chat.id) {
+      console.error("Invalid chat selected:", chat);
+      return;
     }
 
-    // Sort messages by timestamp
-    uniqueMessages.sort(
-      (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+    setCurrentChat(chat);
+    fetchMessages(chat.id);
+  };
+
+  // Find the other user in the chat
+  const getOtherUser = (chat) => {
+    if (
+      !chat ||
+      !chat.users ||
+      !Array.isArray(chat.users) ||
+      chat.users.length === 0
+    ) {
+      return { firstName: "User", lastName: "" };
+    }
+
+    // Handle case where user array might be empty
+    if (chat.users.length === 0) {
+      return { firstName: "User", lastName: "" };
+    }
+
+    // Find the other user
+    const otherUser = chat.users.find(
+      (user) => user && user.id !== auth.user?.id
     );
 
-    setMessages(uniqueMessages);
+    // Fallback if somehow we can't find the other user
+    return otherUser || chat.users[0] || { firstName: "User", lastName: "" };
+  };
+
+  // Close error snackbar
+  const handleCloseError = () => {
+    setError(null);
   };
 
   return (
@@ -169,7 +360,7 @@ const Message = () => {
               {message.chats && message.chats.length > 0 ? (
                 message.chats.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.id || Math.random()}
                     onClick={() => handleChatSelect(item)}
                     className={`cursor-pointer ${
                       currentChat?.id === item.id ? "bg-blue-50 rounded-lg" : ""
@@ -180,7 +371,7 @@ const Message = () => {
                 ))
               ) : (
                 <div className="text-center text-gray-500 mt-5">
-                  No chats available
+                  {message.loading ? "Loading chats..." : "No chats available"}
                 </div>
               )}
             </div>
@@ -201,20 +392,17 @@ const Message = () => {
               <div className="flex justify-between items-center border-b p-4">
                 <div className="flex items-center space-x-3">
                   <Avatar
-                    src={
-                      auth.user.id === currentChat.users[0]?.id
-                        ? currentChat.users[1]?.image
-                        : currentChat.users[0]?.image
-                    }
-                  />
+                    src={getOtherUser(currentChat)?.avatar}
+                    alt={getOtherUser(currentChat)?.firstName}
+                  >
+                    {getOtherUser(currentChat)
+                      ?.firstName?.charAt(0)
+                      .toUpperCase() || "U"}
+                  </Avatar>
                   <p className="font-medium">
-                    {auth.user.id === currentChat.users[0]?.id
-                      ? `${currentChat.users[1]?.firstName || ""} ${
-                          currentChat.users[1]?.lastName || ""
-                        }`
-                      : `${currentChat.users[0]?.firstName || ""} ${
-                          currentChat.users[0]?.lastName || ""
-                        }`}
+                    {`${getOtherUser(currentChat)?.firstName || "User"} ${
+                      getOtherUser(currentChat)?.lastName || ""
+                    }`}
                   </p>
                 </div>
 
@@ -232,13 +420,17 @@ const Message = () => {
                 ref={messagesContainerRef}
                 className="flex-grow overflow-y-auto hideScrollbar p-4 space-y-4"
               >
-                {messages && messages.length > 0 ? (
+                {loading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <CircularProgress size={40} />
+                  </div>
+                ) : messages && messages.length > 0 ? (
                   <>
                     {messages.map(
                       (item) =>
                         item && (
                           <ChatMessage
-                            key={item.id || Date.now()}
+                            key={item.id || `msg-${Math.random()}`}
                             item={item}
                           />
                         )
@@ -324,12 +516,29 @@ const Message = () => {
         </Box>
       </Box>
 
+      {/* Loading backdrop */}
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
       >
         <CircularProgress color="inherit" />
       </Backdrop>
+
+      {/* Error snackbar */}
+      <Snackbar
+        open={error !== null}
+        autoHideDuration={6000}
+        onClose={handleCloseError}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseError}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          {error}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

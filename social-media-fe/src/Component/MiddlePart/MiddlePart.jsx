@@ -17,6 +17,8 @@ import { useNavigate } from "react-router-dom";
 
 // Set to true when ready to enable stories
 const ENABLE_STORIES = true;
+// Stories should only be visible for 24 hours (in milliseconds)
+const STORY_VISIBILITY_DURATION = 24 * 60 * 60 * 1000;
 
 const MiddlePart = () => {
   const [openCreatePostModal, setOpenCreatePostModal] = useState(false);
@@ -75,16 +77,46 @@ const MiddlePart = () => {
   const getStoriesForDisplay = () => {
     if (!story || !story.userStories) return [];
 
+    const now = new Date().getTime();
+
     // Convert the userStories object to an array of user story groups
+    // and filter out old stories based on timestamp
     return Object.values(story.userStories)
-      .filter((stories) => stories && stories.length > 0)
+      .map((stories) => {
+        // Filter out stories older than 24 hours
+        if (!stories || !Array.isArray(stories)) return null;
+
+        const validStories = stories.filter((storyItem) => {
+          if (!storyItem || !storyItem.timestamp) return false;
+
+          // Parse the timestamp string to a Date object
+          const storyTime = new Date(storyItem.timestamp).getTime();
+          return now - storyTime <= STORY_VISIBILITY_DURATION;
+        });
+
+        return validStories.length > 0 ? validStories : null;
+      })
+      .filter(Boolean) // Remove null values
+      .filter((stories) => stories.length > 0) // Ensure we have stories
       .map((stories) => {
         const user = stories[0].user;
+        // Use the most recent story as the preview
+        const mostRecentStory = stories.reduce((latest, current) => {
+          if (!latest.timestamp) return current;
+          if (!current.timestamp) return latest;
+
+          const latestTime = new Date(latest.timestamp).getTime();
+          const currentTime = new Date(current.timestamp).getTime();
+
+          return currentTime > latestTime ? current : latest;
+        }, stories[0]);
+
         return {
           userId: user?.id,
           username: user ? `${user.firstName} ${user.lastName}` : "User",
           profileImage: user?.avatar,
-          previewImage: stories[0].image,
+          previewImage: mostRecentStory.image,
+          storyCount: stories.length,
         };
       });
   };
@@ -131,6 +163,11 @@ const MiddlePart = () => {
                 <p className="mt-1 text-sm max-w-[5rem] truncate text-center">
                   {story.username}
                 </p>
+                {story.storyCount > 1 && (
+                  <span className="text-xs text-blue-500">
+                    {story.storyCount}
+                  </span>
+                )}
               </div>
             ))}
 
