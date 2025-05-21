@@ -59,6 +59,9 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "provider")
+    private String provider;
+
     public void savePost(Post post) {
         savedPosts.add(post);
     }
