@@ -2,6 +2,7 @@ package com.java.social_media.service.impl;
 
 import com.java.social_media.config.JwtProvider;
 import com.java.social_media.exceptions.UserException;
+import com.java.social_media.models.Role;
 import com.java.social_media.models.User;
 import com.java.social_media.repository.UserRepository;
 import com.java.social_media.service.UserService;
@@ -19,14 +20,16 @@ public class UserServiceImplementation implements UserService {
     @Override
     public User registerUser(User user) {
         User newUser = new User();
-        // Remove this line: newUser.setId(user.getId());
+
         newUser.setFirstName(user.getFirstName());
         newUser.setLastName(user.getLastName());
         newUser.setEmail(user.getEmail());
         newUser.setPassword(user.getPassword());
+        newUser.setRole(Role.USER);
+        newUser.setProvider("local");
         newUser.setGender(user.getGender());
         newUser.setAvatar(user.getAvatar());
-        newUser.setBackgroundImage(user.getBackgroundImage()); // Add this for the new field
+        newUser.setBackgroundImage(user.getBackgroundImage());
 
         return userRepository.save(newUser);
     }

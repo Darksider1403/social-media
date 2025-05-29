@@ -1,5 +1,6 @@
 package com.java.social_media.service.impl;
 
+import com.java.social_media.models.Role;
 import com.java.social_media.models.User;
 import com.java.social_media.repository.UserRepository;
 import com.java.social_media.service.OAuth2UserService;
@@ -46,6 +47,8 @@ public class OAuth2UserServiceImplementation extends DefaultOAuth2UserService im
             } else {
                 user.setLastName("");
             }
+            user.setRole(Role.USER);
+            user.setGender("");
             // Set provider as Google
             user.setProvider("google");
             // Generate random secure password
