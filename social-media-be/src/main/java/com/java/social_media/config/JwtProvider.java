@@ -23,6 +23,19 @@ public class JwtProvider {
         return jwt;
     }
 
+
+    public static String generateTokenFromEmail(String email) {
+        String jwt = Jwts.builder()
+                .issuer("Social Media API")
+                .issuedAt(new Date())
+                .expiration(new Date(new Date().getTime() + 86400000))
+                .claim("email", email)
+                .signWith(secretKey)
+                .compact();
+
+        return jwt;
+    }
+
     public static String getEmailFromJwtToken(String jwt) {
         // Bearer token
         jwt = jwt.substring(7);

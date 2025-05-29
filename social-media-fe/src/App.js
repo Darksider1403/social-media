@@ -11,6 +11,7 @@ import { connectWebSocket, disconnectWebSocket } from "./config/websocket";
 import Notification from "./pages/Notification/Notification";
 import CreateStories from "./Component/Story/CrearteStories";
 import Stories from "./Component/Story/Stories";
+import OAuthRedirectHandler from "./Component/auth/OAuthRedirectHandler";
 
 function App() {
   const { token, user } = useSelector((state) => state.auth);
@@ -70,6 +71,9 @@ function App() {
             !token ? <Authentication /> : <Navigate to="/home" replace />
           }
         />
+
+        {/* OAuth Redirect Route */}
+        <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
 
         {/* Protected routes */}
         <Route

@@ -1,10 +1,11 @@
-import { Button, TextField } from "@mui/material";
+import { Button, TextField, Divider, Typography } from "@mui/material";
 import { Field, Formik, Form, ErrorMessage } from "formik";
 import React, { useEffect } from "react";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUserAction } from "../../redux/Auth/auth.action";
 import { useLocation, useNavigate } from "react-router-dom";
+import GoogleIcon from "@mui/icons-material/Google";
 
 const initialValues = {
   email: "",
@@ -34,6 +35,11 @@ const Login = () => {
 
   const handleSubmit = (values) => {
     dispatch(loginUserAction({ data: values }));
+  };
+
+  // Handle Google OAuth login
+  const handleGoogleLogin = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorize/google";
   };
 
   return (
@@ -97,6 +103,35 @@ const Login = () => {
           </div>
         </Form>
       </Formik>
+
+      {/* Divider between regular login and OAuth */}
+      <div style={{ margin: "1.5rem 0" }}>
+        <Divider>
+          <Typography color="textSecondary">OR</Typography>
+        </Divider>
+      </div>
+
+      {/* Google Login Button */}
+      <Button
+        variant="outlined"
+        startIcon={<GoogleIcon />}
+        onClick={handleGoogleLogin}
+        fullWidth
+        sx={{
+          textTransform: "none",
+          padding: ".8rem 0",
+          marginBottom: "1rem",
+          borderColor: "#4285F4",
+          color: "#4285F4",
+          "&:hover": {
+            borderColor: "#4285F4",
+            backgroundColor: "rgba(66, 133, 244, 0.04)",
+          },
+        }}
+      >
+        Sign in with Google
+      </Button>
+
       <div
         style={{
           display: "flex",

@@ -47,6 +47,20 @@ export const loginUserAction = (loginData) => async (dispatch) => {
   }
 };
 
+export const loginSuccess = (token) => async (dispatch) => {
+  try {
+    dispatch({ type: LOGIN_SUCCESS, payload: { token } });
+
+    dispatch(getProfileAction(token));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in loginSuccess action:", error);
+    dispatch({ type: LOGIN_FAILURE, payload: error.message });
+    return { success: false, error: error.message };
+  }
+};
+
 export const registerUserAction = (loginData) => async (dispatch) => {
   dispatch({ type: REGISTER_REQUEST });
   try {

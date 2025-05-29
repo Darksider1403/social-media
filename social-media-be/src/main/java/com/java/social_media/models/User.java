@@ -31,12 +31,11 @@ public class User {
     private String email;
     private String password;
     private String gender;
-
-    // Added avatar field to store user profile image URL
     private String avatar;
-
-    // Added background image URL field
     private String backgroundImage;
+
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
 
     @ElementCollection
     private List<Integer> followers = new ArrayList<>();
@@ -58,6 +57,9 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "provider")
+    private String provider;
 
     public void savePost(Post post) {
         savedPosts.add(post);
